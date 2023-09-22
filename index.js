@@ -37,10 +37,11 @@ const buyParams = {
 
 async function callNewsHeadlines() {
   const response = await fetch(
-    `https://newsapi.org/v2/top-headlines?category=business&apiKey=${NEWS_API}`
+    `https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=${NEWS_API}`
   );
   const data = await response.json();
   const titles = data.articles.map((article) => article.title);
+  console.log(titles);
   return titles;
 }
 
@@ -56,17 +57,15 @@ async function callChatGPT(newsData) {
     body: JSON.stringify({
       model: "gpt-3.5-turbo",
       temperature: 0.8,
-      // usage: { prompt_tokens: 56, completion_tokens: 31, total_tokens: 87 },
       messages: [
         {
           role: "system",
           content:
-            "You should only return a single stock ticker. Your output format should look like this: XXXX",
+            "You should only return a single stock ticker. Your output format should look like this: XXXX. You read headlines and see if they talk about any stocks, industries, or markets. Determine a stock that would be affected by the news, even if it is not directly related to the company.",
         },
         {
           role: "user",
-          content: `Pick a random stock ticker. Do not pick AAPL. Return the stock ticker.`,
-          // content: `Given the following news articles, please analyze its content and suggest any stocks that might be positively impacted by the information presented. It might not specThe news articles: ${newsData}`,
+          content: `Read the following headlines. Return a stock ticker based on them. Remember to only return the stock ticker. ${newsData}`,
         },
       ],
     }),
@@ -118,8 +117,8 @@ async function callAlphaVantage(ticker) {
 }
 
 async function mainLoop() {
-  // let newsData = await callNewsHeadlines();
-  let stock = await callChatGPT();
+  let newsData = await callNewsHeadlines();
+  let stock = await callChatGPT(newsData);
   console.log(stock);
   let stockData = await callAlphaVantage(stock);
   let stockAnalyze = await callChatGPTAgain(stockData);
